@@ -1,0 +1,25 @@
+/*!
+ * Typewriter 1.0.0 by @CRISvsGAME - https://crisvsgame.com
+ * Repository - https://github.com/CRISvsGAME/typewriter.git
+ * License - https://crisvsgame.com/license (MIT License)
+ * Copyright 2024 @CRISvsGAME
+ */
+
+@keyframes typewriter {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
+}
+
+.typewriter-output::after {
+    content: '|';
+    animation: typewriter 0.75s steps(1) 0s infinite;
+}
+
+.typewriter-input {
+    display: none;
+}
