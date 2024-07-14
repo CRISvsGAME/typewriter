@@ -83,13 +83,13 @@ typewriter.stop();
 
 You can configure Typewriter with the following options:
 
--   typeStartDelay: Initial delay before starting to type (default: 2000ms).
--   typeDelayMin: Minimum delay for typing a character (default: 100ms).
--   typeDelayMax: Maximum delay for typing a character (default: 200ms).
--   typeEndDelay: Delay at the end of typing an input (default: 1000ms).
--   deleteDelayMin: Minimum delay for deleting a character (default: 50ms).
--   deleteDelayMax: Maximum delay for deleting a character (default: 100ms).
--   deleteEndDelay: Delay at the end of deleting an input (default: 1000ms).
+-   **typeStartDelay**: Initial delay before starting to type (default: 2000ms).
+-   **typeDelayMin**: Minimum delay for typing a character (default: 100ms).
+-   **typeDelayMax**: Maximum delay for typing a character (default: 200ms).
+-   **typeEndDelay**: Delay at the end of typing an input (default: 1000ms).
+-   **deleteDelayMin**: Minimum delay for deleting a character (default: 50ms).
+-   **deleteDelayMax**: Maximum delay for deleting a character (default: 100ms).
+-   **deleteEndDelay**: Delay at the end of deleting an input (default: 1000ms).
 
 ## License
 

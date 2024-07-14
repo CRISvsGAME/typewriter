@@ -1,5 +1,5 @@
 /*!
- * Typewriter 1.0.0 by @CRISvsGAME - https://crisvsgame.com
+ * Typewriter 1.0.1 by @CRISvsGAME - https://crisvsgame.com
  * Repository - https://github.com/CRISvsGAME/typewriter.git
  * License - https://crisvsgame.com/license (MIT License)
  * Copyright 2024 @CRISvsGAME
@@ -25,20 +25,28 @@ class Typewriter {
      */
     constructor(containerId = 'typewriter', options = {}) {
         this.container = document.getElementById(containerId);
-        this.typewriterOutput = this.container.querySelector(`#${containerId} .typewriter-output`);
+        if (!this.container) {
+            throw new Error(`Container element with ID "${containerId}" not found`);
+        }
+        this.typewriterOutput = this.container.querySelector('.typewriter-output');
         this.typewriterInputs = Array.from(this.container.querySelectorAll('.typewriter-input'));
+        if (!this.typewriterOutput || this.typewriterInputs.length === 0) {
+            throw new Error(`Required elements not found in container with ID ${containerId}`);
+        }
         this.typewriterIndex = 0;
         this.characterIndex = 0;
         this.typing = true;
         this.typewriterTimeout = null;
-        this.options = options;
-        this.typeStartDelay = options.typeStartDelay || 2000;
-        this.typeDelayMin = options.typeDelayMin || 100;
-        this.typeDelayMax = options.typeDelayMax || 200;
-        this.typeEndDelay = options.typeEndDelay || 1000;
-        this.deleteDelayMin = options.deleteDelayMin || 50;
-        this.deleteDelayMax = options.deleteDelayMax || 100;
-        this.deleteEndDelay = options.deleteEndDelay || 1000;
+        this.options = {
+            typeStartDelay: 2000,
+            typeDelayMin: 100,
+            typeDelayMax: 200,
+            typeEndDelay: 1000,
+            deleteDelayMin: 50,
+            deleteDelayMax: 100,
+            deleteEndDelay: 1000,
+            ...options,
+        };
     }
 
     /**
@@ -62,29 +70,33 @@ class Typewriter {
             if (this.characterIndex < currentText.length) {
                 this.typewriterOutput.innerText += currentText[this.characterIndex];
                 this.characterIndex++;
-                this.typewriterTimeout = setTimeout(() => this.#startTyping(), this.getRandomInteger(this.typeDelayMin, this.typeDelayMax));
+                this.typewriterTimeout = setTimeout(() => {
+                    this.#startTyping();
+                }, this.getRandomInteger(this.options.typeDelayMin, this.options.typeDelayMax));
             } else {
                 this.typing = false;
-                this.typewriterTimeout = setTimeout(() => this.#startTyping(), this.typeEndDelay);
+                this.typewriterTimeout = setTimeout(() => this.#startTyping(), this.options.typeEndDelay);
             }
         } else {
             if (this.characterIndex > 0) {
                 this.typewriterOutput.innerText = this.typewriterOutput.innerText.slice(0, -1);
                 this.characterIndex--;
-                this.typewriterTimeout = setTimeout(() => this.#startTyping(), this.getRandomInteger(this.deleteDelayMin, this.deleteDelayMax));
+                this.typewriterTimeout = setTimeout(() => {
+                    this.#startTyping();
+                }, this.getRandomInteger(this.options.deleteDelayMin, this.options.deleteDelayMax));
             } else {
                 this.typing = true;
                 this.typewriterIndex = (this.typewriterIndex + 1) % this.typewriterInputs.length;
-                this.typewriterTimeout = setTimeout(() => this.#startTyping(), this.deleteEndDelay);
+                this.typewriterTimeout = setTimeout(() => this.#startTyping(), this.options.deleteEndDelay);
             }
         }
     }
 
     /**
      * Starts the typing effect.
-     * @param {number} [typeStartDelay=this.typeStartDelay] - Initial delay before starting to type.
+     * @param {number} [typeStartDelay=this.options.typeStartDelay] - Initial delay before starting to type.
      */
-    start(typeStartDelay = this.typeStartDelay) {
+    start(typeStartDelay = this.options.typeStartDelay) {
         clearTimeout(this.typewriterTimeout);
         this.typewriterTimeout = setTimeout(() => this.#startTyping(), typeStartDelay);
     }
