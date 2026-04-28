@@ -1,0 +1,37 @@
+{
+    "name": "@crisvsgame/typewriter",
+    "version": "0.0.1",
+    "description": "A lightweight typewriter animation engine using animation frames and natural randomised character timing",
+    "keywords": [
+        "lightweight",
+        "typewriter",
+        "typing",
+        "text",
+        "animation",
+        "engine",
+        "effect",
+        "effects",
+        "character",
+        "characters",
+        "random",
+        "randomised",
+        "randomized",
+        "natural",
+        "timing"
+    ],
+    "homepage": "https://github.com/CRISvsGAME/typewriter#readme",
+    "bugs": {
+        "url": "https://github.com/CRISvsGAME/typewriter/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/CRISvsGAME/typewriter.git"
+    },
+    "license": "MIT",
+    "author": "CRISvsGAME <cris@crisvsgame.com>",
+    "type": "module",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    }
+}
