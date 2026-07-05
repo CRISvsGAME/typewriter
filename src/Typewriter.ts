@@ -59,6 +59,7 @@ const defaultTypewriterOptions: TypewriterOptions = {
 export class Typewriter {
     private typewriters: TypewriterTarget[];
     private runtimeState: TypewriterRuntimeState = STOPPED;
+    private frameId: number | null = null;
 
     constructor(typewriters: Partial<TypewriterOptions>[] = [{}]) {
         this.typewriters = [];
@@ -129,5 +130,47 @@ export class Typewriter {
                 });
             }
         }
+    }
+
+    private animate = (time: number): void => {
+        if (this.runtimeState !== RUNNING) {
+            this.frameId = null;
+            return;
+        }
+
+        this.frameId = requestAnimationFrame(this.animate);
+    };
+
+    public start(): void {
+        if (this.runtimeState === RUNNING) return;
+
+        this.runtimeState = RUNNING;
+        this.frameId = requestAnimationFrame(this.animate);
+    }
+
+    public pause(): void {
+        if (this.runtimeState !== RUNNING) return;
+
+        this.runtimeState = PAUSED;
+
+        if (this.frameId !== null) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = null;
+        }
+    }
+
+    public reset(): void {
+        if (this.runtimeState !== RUNNING) {
+            this.runtimeState = PAUSED;
+        }
+    }
+
+    public stop(): void {
+        if (this.frameId !== null) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = null;
+        }
+
+        this.runtimeState = STOPPED;
     }
 }
