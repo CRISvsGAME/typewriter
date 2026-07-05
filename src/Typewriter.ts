@@ -24,8 +24,13 @@ type TypewriterTarget = {
 
 type TypewriterSourceMode = "replace" | "append" | "prepend";
 
+type TypewriterRuntimeState = typeof STOPPED | typeof RUNNING | typeof PAUSED;
+
 type TypewriterState = typeof START_WAIT | typeof WRITING | typeof WRITE_WAIT | typeof DELETING | typeof DELETE_WAIT;
 
+const STOPPED = 0;
+const RUNNING = 1;
+const PAUSED = 2;
 const START_WAIT = 0;
 const WRITING = 1;
 const WRITE_WAIT = 2;
@@ -53,6 +58,7 @@ const defaultTypewriterOptions: TypewriterOptions = {
 
 export class Typewriter {
     private typewriters: TypewriterTarget[];
+    private runtimeState: TypewriterRuntimeState = STOPPED;
 
     constructor(typewriters: Partial<TypewriterOptions>[] = [{}]) {
         this.typewriters = [];
