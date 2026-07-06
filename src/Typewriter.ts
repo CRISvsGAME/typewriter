@@ -132,23 +132,60 @@ export class Typewriter {
         }
     }
 
+    private static randomInt = (min: number, max: number): number => {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
+    private update = (typewriter: TypewriterTarget, time: number): void => {
+        if (time < typewriter.nextTime) return;
+
+        switch (typewriter.state) {
+            case START_WAIT:
+                typewriter.state = WRITING;
+                typewriter.nextTime = time;
+                break;
+            case WRITING:
+                this.write(typewriter, time);
+                break;
+        }
+    };
+
+    private write = (typewriter: TypewriterTarget, time: number): void => {
+        const text = typewriter.texts[typewriter.textIndex]!;
+        const options = typewriter.options;
+
+        if (typewriter.charIndex >= text.length) {
+            typewriter.state = WRITE_WAIT;
+            typewriter.nextTime = time + options.holdAfterWrite;
+            return;
+        }
+
+        typewriter.charIndex++;
+        typewriter.view.textContent = text.substring(0, typewriter.charIndex);
+        typewriter.nextTime = time + Typewriter.randomInt(options.minWriteDelay, options.maxWriteDelay);
+    };
+
     private animate = (time: number): void => {
         if (this.runtimeState !== RUNNING) {
             this.frameId = null;
             return;
         }
 
+        for (const typewriter of this.typewriters) {
+            this.update(typewriter, time);
+        }
+
         this.frameId = requestAnimationFrame(this.animate);
     };
 
-    public start(): void {
+    public start = (): void => {
         if (this.runtimeState === RUNNING) return;
 
         this.runtimeState = RUNNING;
         this.frameId = requestAnimationFrame(this.animate);
-    }
+    };
 
-    public pause(): void {
+    public pause = (): void => {
         if (this.runtimeState !== RUNNING) return;
 
         this.runtimeState = PAUSED;
@@ -157,20 +194,20 @@ export class Typewriter {
             cancelAnimationFrame(this.frameId);
             this.frameId = null;
         }
-    }
+    };
 
-    public reset(): void {
+    public reset = (): void => {
         if (this.runtimeState !== RUNNING) {
             this.runtimeState = PAUSED;
         }
-    }
+    };
 
-    public stop(): void {
+    public stop = (): void => {
         if (this.frameId !== null) {
             cancelAnimationFrame(this.frameId);
             this.frameId = null;
         }
 
         this.runtimeState = STOPPED;
-    }
+    };
 }
