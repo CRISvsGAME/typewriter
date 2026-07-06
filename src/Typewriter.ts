@@ -147,6 +147,19 @@ export class Typewriter {
             case WRITING:
                 this.write(typewriter, time);
                 break;
+            case WRITE_WAIT:
+                typewriter.state = DELETING;
+                typewriter.nextTime = time;
+                break;
+            case DELETING:
+                this.delete(typewriter, time);
+                break;
+            case DELETE_WAIT:
+                typewriter.textIndex = (typewriter.textIndex + 1) % typewriter.texts.length;
+                typewriter.charIndex = 0;
+                typewriter.state = WRITING;
+                typewriter.nextTime = time;
+                break;
         }
     };
 
@@ -163,6 +176,21 @@ export class Typewriter {
         typewriter.charIndex++;
         typewriter.view.textContent = text.substring(0, typewriter.charIndex);
         typewriter.nextTime = time + Typewriter.randomInt(options.minWriteDelay, options.maxWriteDelay);
+    };
+
+    private delete = (typewriter: TypewriterTarget, time: number): void => {
+        const text = typewriter.texts[typewriter.textIndex]!;
+        const options = typewriter.options;
+
+        if (typewriter.charIndex <= 0) {
+            typewriter.state = DELETE_WAIT;
+            typewriter.nextTime = time + options.holdAfterDelete;
+            return;
+        }
+
+        typewriter.charIndex--;
+        typewriter.view.textContent = text.substring(0, typewriter.charIndex);
+        typewriter.nextTime = time + Typewriter.randomInt(options.minDeleteDelay, options.maxDeleteDelay);
     };
 
     private animate = (time: number): void => {
