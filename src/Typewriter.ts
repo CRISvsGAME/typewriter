@@ -58,78 +58,16 @@ const defaultTypewriterOptions: TypewriterOptions = {
 };
 
 export class Typewriter {
-    private typewriters: TypewriterTarget[];
+    private typewriters: TypewriterTarget[] = [];
     private runtimeState: TypewriterRuntimeState = STOPPED;
     private frameId: number | null = null;
+    private registeredRoots: Set<HTMLElement> = new Set<HTMLElement>();
 
-    constructor(typewriters: Partial<TypewriterOptions>[] = [{}]) {
-        this.typewriters = [];
+    constructor(options: Partial<TypewriterOptions> | Partial<TypewriterOptions>[] = [{}]) {
+        const optionsArray = Array.isArray(options) ? options : [options];
 
-        const registeredRoots = new Set<HTMLElement>();
-
-        for (const typewriter of typewriters) {
-            const options = { ...defaultTypewriterOptions, ...typewriter };
-
-            // Validate Options
-
-            const selector = `${ROOT_SELECTOR}${options.selector}`;
-            const roots = document.querySelectorAll<HTMLElement>(selector);
-
-            if (roots.length === 0) {
-                console.warn(`Typewriter: No root element found for selector "${selector}". Skipping this typewriter instance.`);
-                continue;
-            }
-
-            const optTexts = typewriter.texts?.filter((t) => t.length > 0) ?? [];
-
-            for (const root of roots) {
-                if (registeredRoots.has(root)) {
-                    console.warn(`Typewriter: Root element already registered for selector "${selector}". Skipping this typewriter duplicate.`);
-                    continue;
-                }
-
-                const view = root.querySelector<HTMLElement>(VIEW_SELECTOR);
-
-                if (view === null) {
-                    console.warn(`Typewriter: No view element found for selector "${selector}". Skipping this typewriter instance.`);
-                    continue;
-                }
-
-                registeredRoots.add(root);
-
-                const domTexts = Array.from(root.querySelectorAll(TEXT_SELECTOR))
-                    .map((e) => e.textContent ?? "")
-                    .filter((t) => t.length > 0);
-
-                let texts: string[];
-
-                switch (options.sourceMode) {
-                    case "append":
-                        texts = [...domTexts, ...optTexts];
-                        break;
-                    case "prepend":
-                        texts = [...optTexts, ...domTexts];
-                        break;
-                    case "replace":
-                        texts = optTexts.length > 0 ? optTexts : domTexts;
-                        break;
-                }
-
-                if (texts.length === 0) {
-                    texts = defaultTypewriterOptions.texts;
-                }
-
-                this.typewriters.push({
-                    root,
-                    view,
-                    options,
-                    texts,
-                    textIndex: 0,
-                    charIndex: 0,
-                    state: START_WAIT,
-                    nextTime: performance.now() + options.startDelay,
-                });
-            }
+        for (const o of optionsArray) {
+            this.resolveTargets(o);
         }
     }
 
@@ -250,6 +188,7 @@ export class Typewriter {
 
     public start = (): void => {
         if (this.runtimeState === RUNNING) return;
+        if (this.typewriters.length === 0) return;
 
         this.runtimeState = RUNNING;
         this.frameId = requestAnimationFrame(this.animate);
@@ -283,5 +222,136 @@ export class Typewriter {
 
         this.runtimeState = STOPPED;
         this.hardResetTypewriters();
+    };
+
+    private resolveTargets = (options: Partial<TypewriterOptions>): void => {
+        const o: TypewriterOptions = { ...defaultTypewriterOptions, ...options };
+        const skip = "Skipping this typewriter instance.";
+
+        if (typeof o.selector !== "string") {
+            console.warn(`Typewriter: Invalid selector "${o.selector}". It should be a string. ${skip}`);
+            return;
+        }
+
+        if (!Array.isArray(o.texts) || !o.texts.every((t) => typeof t === "string")) {
+            console.warn(`Typewriter: Invalid texts "${o.texts}". It should be an array of strings. ${skip}`);
+            return;
+        }
+
+        const selector = `${ROOT_SELECTOR}${o.selector}`;
+        let roots: NodeListOf<HTMLElement>;
+
+        try {
+            roots = document.querySelectorAll<HTMLElement>(selector);
+        } catch (error) {
+            console.warn(`Typewriter: Invalid selector "${selector}". ${skip}`);
+            return;
+        }
+
+        if (roots.length === 0) {
+            console.warn(`Typewriter: No root element found for selector "${selector}". ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.startDelay) || o.startDelay < 0) {
+            console.warn(`Typewriter: Invalid startDelay "${o.startDelay}". It should be a non-negative integer. ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.holdAfterWrite) || o.holdAfterWrite < 0) {
+            console.warn(`Typewriter: Invalid holdAfterWrite "${o.holdAfterWrite}". It should be a non-negative integer. ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.holdAfterDelete) || o.holdAfterDelete < 0) {
+            console.warn(`Typewriter: Invalid holdAfterDelete "${o.holdAfterDelete}". It should be a non-negative integer. ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.minWriteDelay) || o.minWriteDelay < 0) {
+            console.warn(`Typewriter: Invalid minWriteDelay "${o.minWriteDelay}". It should be a non-negative integer. ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.maxWriteDelay) || o.maxWriteDelay < 0) {
+            console.warn(`Typewriter: Invalid maxWriteDelay "${o.maxWriteDelay}". It should be a non-negative integer. ${skip}`);
+            return;
+        }
+
+        if (o.minWriteDelay > o.maxWriteDelay) {
+            console.warn(`Typewriter: minWriteDelay "${o.minWriteDelay}" is greater than maxWriteDelay "${o.maxWriteDelay}". ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.minDeleteDelay) || o.minDeleteDelay < 0) {
+            console.warn(`Typewriter: Invalid minDeleteDelay "${o.minDeleteDelay}". It should be a non-negative integer. ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.maxDeleteDelay) || o.maxDeleteDelay < 0) {
+            console.warn(`Typewriter: Invalid maxDeleteDelay "${o.maxDeleteDelay}". It should be a non-negative integer. ${skip}`);
+            return;
+        }
+
+        if (o.minDeleteDelay > o.maxDeleteDelay) {
+            console.warn(`Typewriter: minDeleteDelay "${o.minDeleteDelay}" is greater than maxDeleteDelay "${o.maxDeleteDelay}". ${skip}`);
+            return;
+        }
+
+        if (!["replace", "append", "prepend"].includes(o.sourceMode)) {
+            console.warn(`Typewriter: Invalid sourceMode "${o.sourceMode}". It should be one of "replace", "append", or "prepend". ${skip}`);
+            return;
+        }
+
+        const optTexts = options.texts?.filter((t) => t.length > 0) ?? [];
+
+        for (const root of roots) {
+            if (this.registeredRoots.has(root)) {
+                console.warn(`Typewriter: Root element already registered for selector "${selector}". Skipping this typewriter duplicate.`);
+                continue;
+            }
+
+            const view = root.querySelector<HTMLElement>(VIEW_SELECTOR);
+
+            if (view === null) {
+                console.warn(`Typewriter: No view element found for selector "${selector}". Skipping this typewriter instance.`);
+                continue;
+            }
+
+            this.registeredRoots.add(root);
+
+            const domTexts = Array.from(root.querySelectorAll(TEXT_SELECTOR))
+                .map((e) => e.textContent ?? "")
+                .filter((t) => t.length > 0);
+
+            let texts: string[];
+
+            switch (o.sourceMode) {
+                case "append":
+                    texts = [...domTexts, ...optTexts];
+                    break;
+                case "prepend":
+                    texts = [...optTexts, ...domTexts];
+                    break;
+                case "replace":
+                    texts = optTexts.length > 0 ? optTexts : domTexts;
+                    break;
+            }
+
+            if (texts.length === 0) {
+                texts = [...defaultTypewriterOptions.texts];
+            }
+
+            this.typewriters.push({
+                root,
+                view,
+                options: o,
+                texts,
+                textIndex: 0,
+                charIndex: 0,
+                state: START_WAIT,
+                nextTime: performance.now() + o.startDelay,
+            });
+        }
     };
 }
