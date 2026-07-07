@@ -26,7 +26,7 @@ type TypewriterSourceMode = "replace" | "append" | "prepend";
 
 type TypewriterRuntimeState = typeof STOPPED | typeof RUNNING | typeof PAUSED;
 
-type TypewriterState = typeof START_WAIT | typeof WRITING | typeof WRITE_WAIT | typeof DELETING | typeof DELETE_WAIT;
+type TypewriterState = typeof START_WAIT | typeof WRITING | typeof WRITE_WAIT | typeof DELETING | typeof DELETE_WAIT | typeof RESETTING;
 
 const STOPPED = 0;
 const RUNNING = 1;
@@ -36,6 +36,7 @@ const WRITING = 1;
 const WRITE_WAIT = 2;
 const DELETING = 3;
 const DELETE_WAIT = 4;
+const RESETTING = 5;
 const ROOT_CLASS = "cvg-typewriter";
 const TEXT_CLASS = "cvg-typewriter__text";
 const VIEW_CLASS = "cvg-typewriter__view";
@@ -136,6 +137,44 @@ export class Typewriter {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     };
 
+    private hardResetTypewriters = (): void => {
+        const time = performance.now();
+
+        for (const typewriter of this.typewriters) {
+            typewriter.textIndex = 0;
+            typewriter.charIndex = 0;
+            typewriter.state = START_WAIT;
+            typewriter.nextTime = time + typewriter.options.startDelay;
+            typewriter.view.textContent = "";
+        }
+    };
+
+    private gracefulResetTypewriters = (): void => {
+        const time = performance.now();
+
+        for (const typewriter of this.typewriters) {
+            typewriter.state = RESETTING;
+            typewriter.nextTime = time;
+        }
+    };
+
+    private resetDelete = (typewriter: TypewriterTarget, time: number): void => {
+        const text = typewriter.texts[typewriter.textIndex]!;
+        const options = typewriter.options;
+
+        if (typewriter.charIndex <= 0) {
+            typewriter.textIndex = 0;
+            typewriter.charIndex = 0;
+            typewriter.state = START_WAIT;
+            typewriter.nextTime = time + options.startDelay;
+            return;
+        }
+
+        typewriter.charIndex--;
+        typewriter.view.textContent = text.substring(0, typewriter.charIndex);
+        typewriter.nextTime = time + Typewriter.randomInt(options.minDeleteDelay, options.maxDeleteDelay);
+    };
+
     private update = (typewriter: TypewriterTarget, time: number): void => {
         if (time < typewriter.nextTime) return;
 
@@ -159,6 +198,9 @@ export class Typewriter {
                 typewriter.charIndex = 0;
                 typewriter.state = WRITING;
                 typewriter.nextTime = time;
+                break;
+            case RESETTING:
+                this.resetDelete(typewriter, time);
                 break;
         }
     };
@@ -226,8 +268,11 @@ export class Typewriter {
 
     public reset = (): void => {
         if (this.runtimeState !== RUNNING) {
-            this.runtimeState = PAUSED;
+            this.hardResetTypewriters();
+            return;
         }
+
+        this.gracefulResetTypewriters();
     };
 
     public stop = (): void => {
@@ -237,5 +282,6 @@ export class Typewriter {
         }
 
         this.runtimeState = STOPPED;
+        this.hardResetTypewriters();
     };
 }
