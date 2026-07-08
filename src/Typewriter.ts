@@ -9,17 +9,30 @@ export type TypewriterOptions = {
     minDeleteDelay: number;
     maxDeleteDelay: number;
     sourceMode: TypewriterSourceMode;
+    cursor: boolean;
+    cursorText: string;
+    cursorBlinkInterval: number;
 };
 
 type TypewriterTarget = {
     root: HTMLElement;
     view: HTMLElement;
+    value: HTMLElement;
     options: TypewriterOptions;
+    cursor: TypewriterCursor | null;
     texts: string[];
     textIndex: number;
     charIndex: number;
     state: TypewriterState;
     nextTime: number;
+};
+
+type TypewriterCursor = {
+    element: HTMLElement;
+    text: string;
+    blinkInterval: number;
+    nextBlinkTime: number;
+    visible: boolean;
 };
 
 type TypewriterSourceMode = "replace" | "append" | "prepend";
@@ -55,6 +68,9 @@ const defaultTypewriterOptions: TypewriterOptions = {
     minDeleteDelay: 50,
     maxDeleteDelay: 100,
     sourceMode: "replace",
+    cursor: true,
+    cursorText: "|",
+    cursorBlinkInterval: 500,
 };
 
 export class Typewriter {
