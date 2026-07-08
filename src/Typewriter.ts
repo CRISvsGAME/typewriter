@@ -319,6 +319,21 @@ export class Typewriter {
             return;
         }
 
+        if (typeof o.cursor !== "boolean") {
+            console.warn(`Typewriter: Invalid cursor "${o.cursor}". It should be a boolean. ${skip}`);
+            return;
+        }
+
+        if (typeof o.cursorText !== "string") {
+            console.warn(`Typewriter: Invalid cursorText "${o.cursorText}". It should be a string. ${skip}`);
+            return;
+        }
+
+        if (!Number.isInteger(o.cursorBlinkInterval) || o.cursorBlinkInterval <= 0) {
+            console.warn(`Typewriter: Invalid cursorBlinkInterval "${o.cursorBlinkInterval}". It should be a positive integer. ${skip}`);
+            return;
+        }
+
         const optTexts = options.texts?.filter((t) => t.length > 0) ?? [];
 
         for (const root of roots) {
