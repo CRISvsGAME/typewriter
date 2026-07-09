@@ -53,13 +53,15 @@ const RESETTING = 5;
 const ROOT_CLASS = "cvg-typewriter";
 const TEXT_CLASS = "cvg-typewriter__text";
 const VIEW_CLASS = "cvg-typewriter__view";
+const VALUE_CLASS = "cvg-typewriter__value";
+const CURSOR_CLASS = "cvg-typewriter__cursor";
 const ROOT_SELECTOR = `.${ROOT_CLASS}`;
 const TEXT_SELECTOR = `.${TEXT_CLASS}`;
 const VIEW_SELECTOR = `.${VIEW_CLASS}`;
 
 const defaultTypewriterOptions: TypewriterOptions = {
     selector: "",
-    texts: ["Typewriter", "Animation", "Library"],
+    texts: [],
     startDelay: 100,
     holdAfterWrite: 1000,
     holdAfterDelete: 100,
@@ -99,7 +101,7 @@ export class Typewriter {
             typewriter.charIndex = 0;
             typewriter.state = START_WAIT;
             typewriter.nextTime = time + typewriter.options.startDelay;
-            typewriter.view.textContent = "";
+            typewriter.value.textContent = "";
         }
     };
 
@@ -125,11 +127,12 @@ export class Typewriter {
         }
 
         typewriter.charIndex--;
-        typewriter.view.textContent = text.substring(0, typewriter.charIndex);
+        typewriter.value.textContent = text.substring(0, typewriter.charIndex);
         typewriter.nextTime = time + Typewriter.randomInt(options.minDeleteDelay, options.maxDeleteDelay);
     };
 
     private update = (typewriter: TypewriterTarget, time: number): void => {
+        if (typewriter.texts.length === 0) return;
         if (time < typewriter.nextTime) return;
 
         switch (typewriter.state) {
@@ -170,7 +173,7 @@ export class Typewriter {
         }
 
         typewriter.charIndex++;
-        typewriter.view.textContent = text.substring(0, typewriter.charIndex);
+        typewriter.value.textContent = text.substring(0, typewriter.charIndex);
         typewriter.nextTime = time + Typewriter.randomInt(options.minWriteDelay, options.maxWriteDelay);
     };
 
@@ -185,7 +188,7 @@ export class Typewriter {
         }
 
         typewriter.charIndex--;
-        typewriter.view.textContent = text.substring(0, typewriter.charIndex);
+        typewriter.value.textContent = text.substring(0, typewriter.charIndex);
         typewriter.nextTime = time + Typewriter.randomInt(options.minDeleteDelay, options.maxDeleteDelay);
     };
 
@@ -349,11 +352,42 @@ export class Typewriter {
                 continue;
             }
 
-            this.registeredRoots.add(root);
+            const value = document.createElement("span");
+            value.className = VALUE_CLASS;
 
-            const domTexts = Array.from(root.querySelectorAll(TEXT_SELECTOR))
-                .map((e) => e.textContent ?? "")
-                .filter((t) => t.length > 0);
+            view.textContent = "";
+            view.appendChild(value);
+
+            let cursor: TypewriterCursor | null = null;
+
+            if (o.cursor) {
+                const cursorElement = document.createElement("span");
+                const cursorText = o.cursorText || defaultTypewriterOptions.cursorText;
+                cursorElement.className = CURSOR_CLASS;
+                cursorElement.textContent = cursorText;
+
+                view.appendChild(cursorElement);
+
+                cursor = {
+                    element: cursorElement,
+                    text: cursorText,
+                    blinkInterval: o.cursorBlinkInterval,
+                    nextBlinkTime: performance.now() + o.cursorBlinkInterval,
+                    visible: true,
+                };
+            }
+
+            const domTexts: string[] = [];
+
+            for (const element of root.querySelectorAll<HTMLElement>(TEXT_SELECTOR)) {
+                element.style.display = "none";
+
+                const text = element.textContent?.trim() ?? "";
+
+                if (text.length > 0) {
+                    domTexts.push(text);
+                }
+            }
 
             let texts: string[];
 
@@ -373,10 +407,14 @@ export class Typewriter {
                 texts = [...defaultTypewriterOptions.texts];
             }
 
+            this.registeredRoots.add(root);
+
             this.typewriters.push({
                 root,
                 view,
+                value,
                 options: o,
+                cursor,
                 texts,
                 textIndex: 0,
                 charIndex: 0,
