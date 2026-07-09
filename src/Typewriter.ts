@@ -25,6 +25,7 @@ type TypewriterTarget = {
     charIndex: number;
     state: TypewriterState;
     nextTime: number;
+    lastTextUpdateTime: number;
 };
 
 type TypewriterCursor = {
@@ -102,6 +103,14 @@ export class Typewriter {
             typewriter.state = START_WAIT;
             typewriter.nextTime = time + typewriter.options.startDelay;
             typewriter.value.textContent = "";
+            typewriter.lastTextUpdateTime = -Infinity;
+
+            if (typewriter.cursor) {
+                const cursor = typewriter.cursor;
+                cursor.visible = true;
+                cursor.element.style.visibility = "visible";
+                cursor.nextBlinkTime = time + cursor.blinkInterval;
+            }
         }
     };
 
@@ -129,6 +138,7 @@ export class Typewriter {
         typewriter.charIndex--;
         typewriter.value.textContent = text.substring(0, typewriter.charIndex);
         typewriter.nextTime = time + Typewriter.randomInt(options.minDeleteDelay, options.maxDeleteDelay);
+        typewriter.lastTextUpdateTime = time;
     };
 
     private update = (typewriter: TypewriterTarget, time: number): void => {
@@ -175,6 +185,7 @@ export class Typewriter {
         typewriter.charIndex++;
         typewriter.value.textContent = text.substring(0, typewriter.charIndex);
         typewriter.nextTime = time + Typewriter.randomInt(options.minWriteDelay, options.maxWriteDelay);
+        typewriter.lastTextUpdateTime = time;
     };
 
     private delete = (typewriter: TypewriterTarget, time: number): void => {
@@ -190,6 +201,34 @@ export class Typewriter {
         typewriter.charIndex--;
         typewriter.value.textContent = text.substring(0, typewriter.charIndex);
         typewriter.nextTime = time + Typewriter.randomInt(options.minDeleteDelay, options.maxDeleteDelay);
+        typewriter.lastTextUpdateTime = time;
+    };
+
+    private updateCursor = (typewriter: TypewriterTarget, time: number): void => {
+        const cursor = typewriter.cursor;
+
+        if (!cursor) return;
+
+        const recentTextUpdate = time - typewriter.lastTextUpdateTime < cursor.blinkInterval;
+
+        if (recentTextUpdate) {
+            cursor.visible = true;
+            cursor.element.style.visibility = "visible";
+            cursor.nextBlinkTime = typewriter.lastTextUpdateTime + cursor.blinkInterval;
+            return;
+        }
+
+        if (time < cursor.nextBlinkTime) return;
+
+        cursor.visible = !cursor.visible;
+        cursor.element.style.visibility = cursor.visible ? "visible" : "hidden";
+        cursor.nextBlinkTime = time + cursor.blinkInterval;
+    };
+
+    private hasRunnableTargets = (): boolean => {
+        return this.typewriters.some((typewriter) => {
+            return typewriter.texts.length > 0 || typewriter.cursor !== null;
+        });
     };
 
     private animate = (time: number): void => {
@@ -200,6 +239,7 @@ export class Typewriter {
 
         for (const typewriter of this.typewriters) {
             this.update(typewriter, time);
+            this.updateCursor(typewriter, time);
         }
 
         this.frameId = requestAnimationFrame(this.animate);
@@ -207,7 +247,7 @@ export class Typewriter {
 
     public start = (): void => {
         if (this.runtimeState === RUNNING) return;
-        if (this.typewriters.length === 0) return;
+        if (!this.hasRunnableTargets()) return;
 
         this.runtimeState = RUNNING;
         this.frameId = requestAnimationFrame(this.animate);
@@ -337,7 +377,8 @@ export class Typewriter {
             return;
         }
 
-        const optTexts = options.texts?.filter((t) => t.length > 0) ?? [];
+        const hasOptTexts = options.texts !== undefined;
+        const optTexts = hasOptTexts ? (options.texts!.filter((t) => t.length > 0) ?? []) : [];
 
         for (const root of roots) {
             if (this.registeredRoots.has(root)) {
@@ -350,6 +391,18 @@ export class Typewriter {
             if (view === null) {
                 console.warn(`Typewriter: No view element found for selector "${selector}". Skipping this typewriter instance.`);
                 continue;
+            }
+
+            const domTexts: string[] = [];
+
+            for (const element of root.querySelectorAll<HTMLElement>(TEXT_SELECTOR)) {
+                element.style.display = "none";
+
+                const text = element.textContent?.trim() ?? "";
+
+                if (text.length > 0) {
+                    domTexts.push(text);
+                }
             }
 
             const value = document.createElement("span");
@@ -377,18 +430,6 @@ export class Typewriter {
                 };
             }
 
-            const domTexts: string[] = [];
-
-            for (const element of root.querySelectorAll<HTMLElement>(TEXT_SELECTOR)) {
-                element.style.display = "none";
-
-                const text = element.textContent?.trim() ?? "";
-
-                if (text.length > 0) {
-                    domTexts.push(text);
-                }
-            }
-
             let texts: string[];
 
             switch (o.sourceMode) {
@@ -399,7 +440,7 @@ export class Typewriter {
                     texts = [...optTexts, ...domTexts];
                     break;
                 case "replace":
-                    texts = optTexts.length > 0 ? optTexts : domTexts;
+                    texts = hasOptTexts ? optTexts : domTexts;
                     break;
             }
 
@@ -420,6 +461,7 @@ export class Typewriter {
                 charIndex: 0,
                 state: START_WAIT,
                 nextTime: performance.now() + o.startDelay,
+                lastTextUpdateTime: -Infinity,
             });
         }
     };
