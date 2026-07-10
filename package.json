@@ -1,6 +1,6 @@
 {
     "name": "@crisvsgame/typewriter",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "description": "A lightweight typewriter animation engine using animation frames and natural randomised character timing",
     "keywords": [
         "lightweight",
