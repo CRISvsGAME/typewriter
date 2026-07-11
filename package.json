@@ -1,6 +1,6 @@
 {
     "name": "@crisvsgame/typewriter",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "A lightweight typewriter animation engine using animation frames and natural randomised character timing",
     "keywords": [
         "lightweight",
@@ -38,6 +38,10 @@
             "import": "./dist/index.js"
         }
     },
+    "files": [
+        "dist",
+        "LICENSE"
+    ],
     "scripts": {
         "build": "tsc",
         "dev": "tsc --watch"
