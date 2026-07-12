@@ -58,7 +58,7 @@ Typewriter can also be imported directly in the browser through jsDelivr:
 
 ```html
 <script type="module">
-    import { Typewriter } from "https://cdn.jsdelivr.net/npm/@crisvsgame/typewriter@1.0.0/dist/index.js";
+    import { Typewriter } from "https://cdn.jsdelivr.net/npm/@crisvsgame/typewriter@1.0.1/dist/index.js";
 
     const typewriter = new Typewriter();
 
