@@ -11,6 +11,16 @@ and cursor-only states.
 
 ---
 
+## 🌌 Live Demo
+
+Try Starfield in the browser:
+
+https://crisvsgame.github.io/starfield/
+
+The demo uses Typewriter to render the animated heading text over the Starfield canvas. The typewriter effect runs independently from the canvas animation while sharing the same page-level visual composition.
+
+---
+
 ## 📦 Installation
 
 Install from npm:
@@ -447,3 +457,4 @@ MIT License
 
 - npm: https://www.npmjs.com/package/@crisvsgame/typewriter
 - Source Code: https://github.com/CRISvsGAME/typewriter
+- Demo: https://crisvsgame.github.io/starfield/
